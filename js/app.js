@@ -615,7 +615,7 @@
 
   /* ---------- 메뉴 / 오버레이 ---------- */
   function closeAll() {
-    for (const id of ['#menu', '#result', '#promo']) $(id).classList.add('hidden');
+    for (const id of ['#menu', '#result', '#promo', '#confirm']) $(id).classList.add('hidden');
   }
 
   function showMenu() {
@@ -643,15 +643,30 @@
     Sound.unlock();
     startGame('ai', { level: parseInt(segValue('#aiLevel'), 10), humanColor: segValue('#aiColor') });
   };
-  $('#btnHome').onclick = showMenu;
-  $('#btnNew').onclick = () => {
-    if (S.history.length && !S.over && !confirm('지금 게임을 그만두고 새로 시작할까요?')) return;
+  $('#btnHome').onclick = async () => {
+    if (gameInProgress() && !(await askConfirm('지금 게임을 그만두고 처음 화면으로 갈까요?'))) return;
+    showMenu();
+  };
+  function askConfirm(msg) {
+    return new Promise((resolve) => {
+      const ov = $('#confirm');
+      ov.querySelector('.confirm-text').textContent = msg;
+      ov.classList.remove('hidden');
+      const done = (v) => { ov.classList.add('hidden'); resolve(v); };
+      $('#confirmYes').onclick = () => done(true);
+      $('#confirmNo').onclick = () => done(false);
+    });
+  }
+  const gameInProgress = () => S.mode === 'game' && S.history.length && !S.over;
+
+  $('#btnNew').onclick = async () => {
+    if (gameInProgress() && !(await askConfirm('지금 게임을 그만두고 새로 시작할까요?'))) return;
     showMenu();
   };
   $('#btnUndo').onclick = undo;
   $('#btnHint').onclick = hint;
-  $('#btnToTutorial').onclick = () => {
-    if (S.history.length && !S.over && !confirm('지금 게임을 그만두고 튜토리얼로 갈까요?')) return;
+  $('#btnToTutorial').onclick = async () => {
+    if (gameInProgress() && !(await askConfirm('지금 게임을 그만두고 튜토리얼로 갈까요?'))) return;
     startTutorial(0);
   };
 

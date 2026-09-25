@@ -436,3 +436,4 @@ button { font-family: inherit; }
   .btn { font-size: 15px; padding: 10px 6px; white-space: nowrap; }
 }
 .confirm-text { margin: 0; font-size: 17px; }
+.btn.used-up { opacity: .45; }

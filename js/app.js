@@ -5,6 +5,7 @@
   const $ = (s, r = document) => r.querySelector(s);
   const { NAME, TEAM, glyph, josa } = Duel;
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const HINTS_PER_GAME = 5;
 
   const S = {
     mode: 'menu',            // 'menu' | 'game' | 'tutorial'
@@ -14,6 +15,7 @@
     legal: [],
     lastMove: null,
     hint: null,
+    hintsLeft: 0,
     flipped: false,
     busy: false,
     over: null,
@@ -316,6 +318,7 @@
     S.state = Chess.newGame();
     S.history = [];
     S.selected = -1; S.legal = []; S.lastMove = null; S.hint = null; S.over = null; S.busy = false;
+    S.hintsLeft = HINTS_PER_GAME;
     $('#gamePanel').hidden = false;
     $('#tutorialPanel').hidden = true;
     render();
@@ -379,13 +382,23 @@
 
   function hint() {
     if (!humanCanMove()) return;
-    const m = AI.bestMove(S.state, 2);
+    if (S.hintsLeft <= 0) {
+      Sound.oops();
+      toast('💡 이번 판의 힌트를 모두 썼어요. 이제 스스로 생각해 봐요!');
+      return;
+    }
+    // 이미 보여 준 힌트를 다시 누르면 횟수를 쓰지 않고 한 번 더 알려 준다
+    const m = S.hint
+      ? Chess.legalMoves(S.state).find((x) => x.from === S.hint.from && x.to === S.hint.to)
+      : AI.bestMove(S.state, 2);
     if (!m) return;
+    if (!S.hint) S.hintsLeft--;
+    updateGamePanel();
     S.hint = { from: m.from, to: m.to };
     S.selected = m.from;
     S.legal = Chess.legalMoves(S.state).filter((x) => x.from === m.from);
     Sound.select();
-    toast(`💡 ${josa(NAME[m.piece[1]], '을', '를')} ${Chess.sqName(m.to)} 칸으로 옮겨 보면 어때요?`, 3500);
+    toast(`💡 ${josa(NAME[m.piece[1]], '을', '를')} ${Chess.sqName(m.to)} 칸으로 옮겨 보면 어때요? (남은 힌트 ${S.hintsLeft}번)`, 3500);
     render();
   }
 
@@ -430,6 +443,10 @@
     });
     log.scrollTop = log.scrollHeight;
     $('#btnUndo').disabled = !S.history.length;
+    const hintBtn = $('#btnHint');
+    hintBtn.textContent = `💡 힌트 ${S.hintsLeft}/${HINTS_PER_GAME}`;
+    hintBtn.classList.toggle('used-up', S.hintsLeft <= 0);
+    hintBtn.title = S.hintsLeft > 0 ? `이번 판에 힌트를 ${S.hintsLeft}번 더 쓸 수 있어요` : '이번 판의 힌트를 모두 썼어요';
   }
 
   function renderBars() {

@@ -1,0 +1,10 @@
+{
+  "name": "wizard-chess",
+  "version": "1.0.0",
+  "description": "아이와 함께 즐기는, 말들이 결투하는 마법사 체스",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "test": "node tests/engine.test.js"
+  }
+}

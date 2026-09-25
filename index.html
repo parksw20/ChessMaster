@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>마법사 체스</title>
+  <meta name="description" content="아이와 함께 즐기는, 말들이 결투하는 마법사 체스 게임">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="stars-bg" aria-hidden="true"></div>
+
+  <header class="top">
+    <button class="title-btn" id="btnHome" title="처음 화면">
+      <span class="wand">🪄</span> 마법사 체스
+    </button>
+    <div class="toggles">
+      <label class="toggle" title="말을 누르면 갈 수 있는 칸 보여주기">
+        <input type="checkbox" id="optMoves" checked><span>👣 이동 칸</span>
+      </label>
+      <label class="toggle" title="말을 잡을 때 결투 장면 보여주기">
+        <input type="checkbox" id="optDuel" checked><span>⚔️ 결투</span>
+      </label>
+      <label class="toggle" title="효과음">
+        <input type="checkbox" id="optSound" checked><span>🔊 소리</span>
+      </label>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="board-area">
+      <div class="player-bar" id="barTop">
+        <span class="team-chip b"></span><span class="bar-name"></span>
+        <div class="captured"></div>
+      </div>
+      <div class="board-frame">
+        <div id="board" class="board" role="grid" aria-label="체스판"></div>
+        <div id="fxLayer" class="fx-layer" aria-hidden="true"></div>
+      </div>
+      <div class="player-bar" id="barBottom">
+        <span class="team-chip w"></span><span class="bar-name"></span>
+        <div class="captured"></div>
+      </div>
+    </section>
+
+    <!-- 게임 패널 -->
+    <aside class="panel" id="gamePanel" hidden>
+      <div class="status-box" id="status">
+        <div class="status-turn"></div>
+        <div class="status-msg"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btnHint">💡 힌트</button>
+        <button class="btn" id="btnUndo">↩️ 무르기</button>
+        <button class="btn" id="btnNew">✨ 새 게임</button>
+      </div>
+      <div class="log-wrap">
+        <h3>📜 마법 기록장</h3>
+        <ol id="moveLog" class="move-log"></ol>
+      </div>
+      <button class="btn ghost" id="btnToTutorial">📖 튜토리얼 다시 보기</button>
+    </aside>
+
+    <!-- 튜토리얼 패널 -->
+    <aside class="panel tutorial" id="tutorialPanel" hidden>
+      <div class="tut-progress"><div class="tut-bar"></div></div>
+      <div class="tut-step"></div>
+      <h2 class="tut-title"></h2>
+      <div class="tut-text"></div>
+      <div class="tut-cards"></div>
+      <div class="tut-task"></div>
+      <div class="tut-feedback" aria-live="polite"></div>
+      <div class="btn-row">
+        <button class="btn" id="tutPrev">◀ 이전</button>
+        <button class="btn" id="tutReset">🔄 다시</button>
+        <button class="btn primary" id="tutNext">다음 ▶</button>
+      </div>
+      <button class="btn ghost" id="tutExit">🏠 처음 화면으로</button>
+    </aside>
+  </main>
+
+  <!-- 시작 메뉴 -->
+  <div class="overlay" id="menu">
+    <div class="card menu-card">
+      <div class="menu-pieces" aria-hidden="true">
+        <span class="w">♞&#xFE0E;</span><span class="b">♛&#xFE0E;</span><span class="w">♜&#xFE0E;</span>
+      </div>
+      <h1>마법사 체스</h1>
+      <p class="sub">말들이 살아 움직이며 결투하는 체스!</p>
+
+      <button class="btn big primary" id="menuTutorial">📖 튜토리얼 <small>처음이라면 여기부터!</small></button>
+      <button class="btn big" id="menuTwo">👨‍👧 둘이서 두기 <small>한 화면에서 번갈아 두기</small></button>
+
+      <div class="ai-box">
+        <div class="ai-title">🤖 마법 컴퓨터와 두기</div>
+        <div class="seg" id="aiLevel">
+          <button data-v="1" class="on">🐣 쉬움</button>
+          <button data-v="2">🦉 보통</button>
+          <button data-v="3">🐉 어려움</button>
+        </div>
+        <div class="seg" id="aiColor">
+          <button data-v="w" class="on">⚪ 하얀 팀 (먼저)</button>
+          <button data-v="b">⚫ 검은 팀</button>
+        </div>
+        <button class="btn big" id="menuAI">⚔️ 대결 시작!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 결투 장면 -->
+  <div class="overlay duel hidden" id="duel">
+    <div class="arena">
+      <div class="fighter attacker"><span class="glyph"></span><span class="label"></span></div>
+      <div class="duel-fx"></div>
+      <div class="fighter defender"><span class="glyph"></span><span class="label"></span><div class="shards"></div></div>
+      <div class="flash"></div>
+    </div>
+    <div class="duel-text"></div>
+    <div class="duel-skip">화면을 누르면 넘어가요</div>
+  </div>
+
+  <!-- 프로모션 선택 -->
+  <div class="overlay hidden" id="promo">
+    <div class="card">
+      <h2>✨ 변신! 어떤 말이 될까요?</h2>
+      <div class="promo-choices"></div>
+    </div>
+  </div>
+
+  <!-- 게임 결과 -->
+  <div class="overlay hidden" id="result">
+    <div class="card result-card">
+      <div class="result-emoji"></div>
+      <h2 class="result-title"></h2>
+      <p class="result-text"></p>
+      <div class="btn-row">
+        <button class="btn primary" id="resAgain">✨ 한 판 더!</button>
+        <button class="btn" id="resView">👀 판 보기</button>
+        <button class="btn" id="resHome">🏠 처음 화면</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="js/engine.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/duel.js"></script>
+  <script src="js/tutorial-lessons.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

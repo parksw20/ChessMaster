@@ -6,6 +6,7 @@
   const { NAME, TEAM, glyph, josa } = Duel;
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const HINTS_PER_GAME = 5;
+  const UNDOS_PER_GAME = { ai: 3, human: 4 };   // 1인용(컴퓨터와) 3번, 둘이서 대결 4번
 
   const S = {
     mode: 'menu',            // 'menu' | 'game' | 'tutorial'
@@ -16,6 +17,7 @@
     lastMove: null,
     hint: null,
     hintsLeft: 0,
+    undosLeft: 0,
     flipped: false,
     busy: false,
     over: null,
@@ -319,6 +321,7 @@
     S.history = [];
     S.selected = -1; S.legal = []; S.lastMove = null; S.hint = null; S.over = null; S.busy = false;
     S.hintsLeft = HINTS_PER_GAME;
+    S.undosLeft = UNDOS_PER_GAME[vs];
     $('#gamePanel').hidden = false;
     $('#tutorialPanel').hidden = true;
     render();
@@ -362,8 +365,19 @@
     }, 650);
   }
 
+  // 컴퓨터와 둘 때는 내가 둔 수가 있어야 되돌릴 의미가 있다
+  const canUndoMove = () => (S.vs === 'ai'
+    ? S.history.some((h) => h.move.piece[0] !== S.aiColor)
+    : S.history.length > 0);
+
   function undo() {
-    if (S.mode !== 'game' || S.busy || !S.history.length) return;
+    if (S.mode !== 'game' || S.busy || !canUndoMove()) return;
+    if (S.undosLeft <= 0) {
+      Sound.oops();
+      toast('↩️ 이번 판의 무르기를 모두 썼어요. 신중하게 두어 봐요!');
+      return;
+    }
+    S.undosLeft--;
     const pop = () => {
       const h = S.history.pop();
       S.state = h.state;
@@ -374,7 +388,7 @@
     S.over = null;
     S.selected = -1; S.legal = []; S.hint = null;
     Sound.magic();
-    toast('↩️ 시간을 되돌렸어요!');
+    toast(`↩️ 시간을 되돌렸어요! (남은 무르기 ${S.undosLeft}번)`);
     render();
     updateGamePanel();
     if (S.vs === 'ai' && S.state.turn === S.aiColor) aiTurn();
@@ -442,7 +456,11 @@
       log.appendChild(li);
     });
     log.scrollTop = log.scrollHeight;
-    $('#btnUndo').disabled = !S.history.length;
+    const undoBtn = $('#btnUndo');
+    undoBtn.disabled = !canUndoMove();
+    undoBtn.textContent = `↩️ 무르기 ${S.undosLeft}/${UNDOS_PER_GAME[S.vs]}`;
+    undoBtn.classList.toggle('used-up', S.undosLeft <= 0);
+    undoBtn.title = S.undosLeft > 0 ? `이번 판에 무르기를 ${S.undosLeft}번 더 쓸 수 있어요` : '이번 판의 무르기를 모두 썼어요';
     const hintBtn = $('#btnHint');
     hintBtn.textContent = `💡 힌트 ${S.hintsLeft}/${HINTS_PER_GAME}`;
     hintBtn.classList.toggle('used-up', S.hintsLeft <= 0);
